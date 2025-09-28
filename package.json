@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "version": "0.1.0",
-  "homepage": "https://shang.github.io",
+  "homepage": "https://shangkorong.github.io",
   "private": true,
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

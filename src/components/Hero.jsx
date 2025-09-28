@@ -9,6 +9,78 @@ import * as THREE from 'three';
 import { portfolioData } from '../data/mock';
 import LiveMetrics from './LiveMetrics';
 
+// Add this new component near the top of your Hero.jsx file, after your imports
+const AnimatedText = ({ text, className, delay = 0 }) => {
+  const letters = text.split('');
+  
+  return (
+    <h1 className={className}>
+      {letters.map((letter, index) => (
+        <motion.span
+          key={index}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.8,
+            delay: delay + (index * 0.05), // 50ms delay between each letter
+            ease: [0.6, -0.05, 0.01, 0.99] // Custom easing for smooth reveal
+          }}
+          className="inline-block"
+          style={{ 
+            marginRight: letter === ' ' ? '0.5rem' : '0',
+            minWidth: letter === ' ' ? '0.5rem' : 'auto'
+          }}
+        >
+          {letter === ' ' ? '\u00A0' : letter}
+        </motion.span>
+      ))}
+    </h1>
+  );
+};
+
+// Enhanced AnimatedText component that works for both headings and paragraphs
+const AnimatedTextWithBlur = ({ text, className, delay = 0, element = 'h2' }) => {
+  const words = text.split(' ');
+  
+  // Create motion component dynamically based on element type
+  const MotionElement = motion[element] || motion.div;
+  
+  return (
+    <MotionElement 
+      className={className}
+      initial={{ scale: 0.94 }}
+      animate={{ scale: 1 }}
+      transition={{
+        duration: 3,
+        ease: [0.5, 1, 0.89, 1] // cubic-bezier(0.5, 1, 0.89, 1)
+      }}
+    >
+      {words.map((word, index) => (
+        <motion.span
+          key={index}
+          initial={{ 
+            opacity: 0, 
+            filter: "blur(4px)" 
+          }}
+          animate={{ 
+            opacity: 1, 
+            filter: "blur(0px)" 
+          }}
+          transition={{
+            duration: 0.8,
+            delay: delay + (index * 0.1), // 100ms delay between each word
+            ease: [0.11, 0, 0.5, 0] // cubic-bezier(0.11, 0, 0.5, 0)
+          }}
+          className="inline-block mr-2"
+        >
+          {word}
+        </motion.span>
+      ))}
+    </MotionElement>
+  );
+};
+
+
 const Hero = () => {
   const ref = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -1352,15 +1424,27 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <h1 className="heading-display text-primary mb-4">
-                {portfolioData.personal.name}
-              </h1>
-              <h2 className="heading-lg text-secondary mb-6">
-                {portfolioData.personal.title}
-              </h2>
-              <p className="body-lg text-primary max-w-2xl">
-                {portfolioData.personal.tagline}
-              </p>
+              <AnimatedText 
+                text={portfolioData.personal.name}
+                className="heading-display text-primary mb-4"
+                delay={0.2}
+              />
+              {/* Title Animation with Blur Effect */}
+              <AnimatedTextWithBlur 
+                text={portfolioData.personal.title}
+                className="heading-lg text-secondary mb-6 blur-animate"
+                element="h2"
+                delay={1.0}
+              />
+
+              {/* Tagline Animation with Blur Effect */}
+              <AnimatedTextWithBlur 
+                text={portfolioData.personal.tagline}
+                className="body-lg text-primary max-w-2xl blur-animate"
+                element="p"
+                delay={2.0}
+              />
+
             </motion.div>
 
             {/* Detailed Description */}

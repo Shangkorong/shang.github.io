@@ -1,0 +1,449 @@
+import React, { useRef, useEffect, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { portfolioData } from '../data/mock';
+import LiveMetrics from './LiveMetrics';
+
+const Hero = () => {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"]
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+  // Static protocols for three dice
+  const protocols = [
+    { name: 'APB', color: '#00FFD1', description: 'Advanced Peripheral Bus' },
+    { name: 'AHB', color: '#8686AC', description: 'Advanced High-performance Bus' }, 
+    { name: 'AXI', color: '#505081', description: 'Advanced eXtensible Interface' }
+  ];
+
+  // True 3D bouncing dice with physics
+  const ThreeDPlaceholder = () => {
+    const [hoveredDie, setHoveredDie] = useState(null);
+    const [draggedDie, setDraggedDie] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const lastMousePos = useRef({ x: 0, y: 0 });
+
+    // Check for reduced motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const resetView = () => {
+      setHoveredDie(null);
+      setDraggedDie(null);
+      setIsDragging(false);
+    };
+
+    // Mouse tracking for 3D space
+    const handleMouseMove = (event) => {
+      setMousePosition({ x: event.clientX, y: event.clientY });
+    };
+
+    const handleMouseDown = (event, protocolName) => {
+      if (event.button === 0) { // Left click only
+        setDraggedDie(protocolName);
+        setIsDragging(true);
+        lastMousePos.current = { x: event.clientX, y: event.clientY };
+        event.stopPropagation();
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDraggedDie(null);
+      setIsDragging(false);
+    };
+
+    const BouncingDie = ({ protocol, index }) => {
+      const meshRef = useRef();
+      const isHoveredRef = useRef(false);
+      const isDraggedRef = useRef(false);
+
+      // Define stable positions inside the component
+      const positions = [
+        [-1.2, 0.5, 0],    // APB - left (moved inside boundary)
+        [0, -0.5, 0.3],     // AHB - center
+        [1.2, 0.8, -0.2]    // AXI - right (moved inside boundary)
+      ];
+
+      const [position, setPosition] = useState(positions[index] || [0, 0, 0]);
+      const [velocity, setVelocity] = useState([
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02
+      ]);
+      const [rotation, setRotation] = useState([0, 0, 0]);
+      const [targetPosition, setTargetPosition] = useState(positions[index] || [0, 0, 0]);
+
+      // Define stable positions inside the component
+      const positions = [
+        [-1.2, 0.5, 0],    // APB - left (moved inside boundary)
+        [0, -0.5, 0.3],     // AHB - center
+        [1.2, 0.8, -0.2]    // AXI - right (moved inside boundary)
+      ];
+
+      const [position, setPosition] = useState(positions[index] || [0, 0, 0]);
+      const [velocity, setVelocity] = useState([
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02
+      ]);
+      const [rotation, setRotation] = useState([0, 0, 0]);
+      const [targetPosition, setTargetPosition] = useState(positions[index] || [0, 0, 0]);
+
+      useFrame((state, delta) => {
+        if (!meshRef.current || prefersReducedMotion) return;
+
+        // Check if this die is being interacted with
+        const isInteracting = isHoveredRef.current || isDraggedRef.current;
+        const isThisDieHovered = hoveredDie === protocol.name;
+        const isThisDieDragged = draggedDie === protocol.name;
+
+        if (isThisDieHovered) {
+          isHoveredRef.current = true;
+        } else {
+          isHoveredRef.current = false;
+        }
+
+        if (isThisDieDragged) {
+          isDraggedRef.current = true;
+        } else {
+          isDraggedRef.current = false;
+        }
+
+        // If this die is being dragged, handle rotation
+        if (isThisDieDragged && isDragging) {
+          const mouseDeltaX = mousePosition.x - lastMousePos.current.x;
+          const mouseDeltaY = mousePosition.y - lastMousePos.current.y;
+
+          setRotation(prev => [
+            prev[0] + mouseDeltaY * 0.01, // Rotate X based on vertical mouse movement
+            prev[1] + mouseDeltaX * 0.01, // Rotate Y based on horizontal mouse movement
+            prev[2]
+          ]);
+
+          lastMousePos.current = { x: mousePosition.x, y: mousePosition.y };
+        }
+
+        // If this die is hovered (but not dragged), make it follow mouse smoothly
+        if (isThisDieHovered && !isDragging) {
+          // Convert mouse position to 3D world coordinates
+          const mouse3D = {
+            x: (mousePosition.x / window.innerWidth) * 4 - 2,  // Convert to -2 to 2 range
+            y: -(mousePosition.y / window.innerHeight) * 4 + 2, // Convert to 2 to -2 range (inverted)
+            z: 0
+          };
+
+          // Smooth follow with lerp
+          const followSpeed = 0.05;
+          setTargetPosition(prev => [
+            prev[0] + (mouse3D.x - prev[0]) * followSpeed,
+            prev[1] + (mouse3D.y - prev[1]) * followSpeed,
+            prev[2] + (mouse3D.z - prev[2]) * followSpeed
+          ]);
+
+          // Stop physics when following mouse
+          setVelocity([0, 0, 0]);
+        } else if (!isInteracting) {
+          // Resume physics when not interacting
+          const newPosition = [...position];
+          const newVelocity = [...velocity];
+
+          // Update position based on velocity
+          newPosition[0] += newVelocity[0];
+          newPosition[1] += newVelocity[1];
+          newPosition[2] += newVelocity[2];
+
+          // Boundary collision detection and bouncing (within a 3x3x2 unit space)
+          const bounds = { x: 1.4, y: 1.5, z: 1 };
+
+          if (Math.abs(newPosition[0]) > bounds.x) {
+            newVelocity[0] *= -0.8; // Damping on bounce
+            newPosition[0] = Math.sign(newPosition[0]) * bounds.x;
+          }
+          if (Math.abs(newPosition[1]) > bounds.y) {
+            newVelocity[1] *= -0.8;
+            newPosition[1] = Math.sign(newPosition[1]) * bounds.y;
+          }
+          if (Math.abs(newPosition[2]) > bounds.z) {
+            newVelocity[2] *= -0.8;
+            newPosition[2] = Math.sign(newPosition[2]) * bounds.z;
+          }
+
+          // Apply slight gravity and air resistance
+          newVelocity[1] -= 0.0001; // Gravity
+          newVelocity[0] *= 0.999;  // Air resistance
+          newVelocity[1] *= 0.999;
+          newVelocity[2] *= 0.999;
+
+          setPosition(newPosition);
+          setVelocity(newVelocity);
+
+          // Rotation based on movement
+          setRotation(prev => [
+            prev[0] + newVelocity[1] * 10,
+            prev[1] + newVelocity[0] * 10,
+            prev[2] + newVelocity[2] * 10
+          ]);
+
+          // Update target position to current position for smooth transitions
+          setTargetPosition(newPosition);
+        }
+
+        // Apply transforms to mesh
+        if (meshRef.current) {
+          meshRef.current.position.set(...targetPosition);
+          meshRef.current.rotation.set(...rotation);
+
+          // Hover effects - only scale, no position changes
+          const targetScale = isHoveredRef.current ? 1.2 : 1;
+          meshRef.current.scale.lerp({ x: targetScale, y: targetScale, z: targetScale }, 0.1);
+        }
+      });
+      return (
+        <mesh
+          ref={meshRef}
+          position={positions[index] || [0, 0, 0]}
+          onPointerEnter={() => {
+            isHoveredRef.current = true;
+            setHoveredDie(protocol.name);
+          }}
+          onPointerLeave={() => {
+            isHoveredRef.current = false;
+            setHoveredDie(null);
+          }}
+          onPointerDown={(event) => {
+            if (event.button === 0) { // Left click only
+              handleMouseDown(event, protocol.name);
+            }
+          }}
+        >
+          <boxGeometry args={[0.8, 0.8, 0.8]} />
+          <meshStandardMaterial
+            color={protocol.color}
+            emissive={protocol.color}
+            emissiveIntensity={isHoveredRef.current ? 0.3 : 0.1}
+            metalness={0.2}
+            roughness={0.3}
+          />
+
+          {/* Protocol label as 3D text would be complex, so we'll use a small plane */}
+          <mesh position={[0, 0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.2, 0.08]} />
+            <meshBasicMaterial color={protocol.color} opacity={0.8} transparent />
+          </mesh>
+        </mesh>
+      );
+    };
+
+    return (
+      <div className="relative w-full h-full bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-accent)] to-[var(--color-dark)] rounded-lg overflow-hidden">
+        <Canvas
+          camera={{ position: [0, 0, 5], fov: 50 }}
+          style={{ width: '100%', height: '100%' }}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          {/* Enhanced Lighting */}
+          <ambientLight intensity={0.6} />
+          <pointLight position={[5, 5, 5]} intensity={1.5} color="#00FFD1" />
+          <pointLight position={[-5, -5, -5]} intensity={1} color="#8686AC" />
+          <directionalLight position={[0, 5, 0]} intensity={0.8} color="white" />
+          
+          {/* Three bouncing dice */}
+          {protocols.map((protocol, index) => (
+            <BouncingDie
+              key={protocol.name}
+              protocol={protocol}
+              index={index}
+            />
+          ))}
+        </Canvas>
+
+        {/* Control instructions and reset button */}
+        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+          <div className="text-white/90 text-xs bg-[var(--glass-bg-strong)] backdrop-blur-md px-2 py-1 rounded border border-[var(--glass-border)]">
+            <div>Hover: Follow Mouse • Drag: Rotate • Physics: Active</div>
+            <div className="text-[var(--color-highlight)]">Interactive 3D protocol dice</div>
+          </div>
+          <motion.button
+            onClick={resetView}
+            className="glass-button text-xs px-3 py-1 min-h-8 text-on-glass"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Reset 3D view to default position"
+          >
+            Reset View
+          </motion.button>
+        </div>
+
+        {/* Status indicator */}
+        <div className="absolute top-4 right-4 text-white bg-[var(--glass-bg-strong)] backdrop-blur-md px-3 py-1 rounded border border-[var(--glass-border)]">
+          <span className="text-sm font-mono">
+            {hoveredDie ? `${hoveredDie} Protocol` : '3D Physics Active'}
+          </span>
+          <div className="text-xs opacity-75 mt-1">
+            {isDragging ? 'Dragging to rotate' : 'Hover to follow mouse'}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const StatsPanel = () => (
+    <motion.div 
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 1.2, duration: 0.8 }}
+    >
+      <LiveMetrics />
+    </motion.div>
+  );
+
+  return (
+    <section ref={ref} className="min-h-screen relative overflow-hidden pt-20" id="hero">
+      {/* Background with parallax */}
+      <motion.div 
+        className="absolute inset-0 bg-gradient-to-br from-[var(--color-dark)] via-[var(--color-primary)] to-[var(--color-accent)] opacity-90"
+        style={{ y }}
+      />
+      
+      <div className="container relative z-10 min-h-screen flex items-center">
+        <div className="grid lg:grid-cols-2 gap-12 w-full items-center">
+          {/* Left Content */}
+          <motion.div 
+            className="space-y-8"
+            style={{ opacity }}
+          >
+            {/* Name and Title */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <h1 className="heading-display text-primary mb-4">
+                {portfolioData.personal.name}
+              </h1>
+              <h2 className="heading-lg text-secondary mb-6">
+                {portfolioData.personal.title}
+              </h2>
+              <p className="body-lg text-primary max-w-2xl">
+                {portfolioData.personal.tagline}
+              </p>
+            </motion.div>
+
+            {/* Detailed Description */}
+            <motion.p 
+              className="body-md text-secondary max-w-2xl leading-relaxed"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+            >
+              Reusable verification environments with drivers, monitors, scoreboards, 
+              coverage, and assertions validating APB, AHB, AXI, FIFO, Memory, FSM, 
+              and Ethernet MAC using QuestaSim/ModelSim on Linux
+            </motion.p>
+
+            {/* CTA Buttons */}
+            <motion.div 
+              className="flex flex-wrap gap-4"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+            >
+              <motion.button
+                className="glass-button primary"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => document.querySelector('#projects').scrollIntoView({ behavior: 'smooth' })}
+              >
+                View Case Studies
+              </motion.button>
+              <motion.a
+                href="/resume.pdf"
+                download
+                className="glass-button highlight"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Download Resume
+              </motion.a>
+              <motion.a
+                href={`mailto:${portfolioData.personal.email}`}
+                className="glass-button"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Email Me
+              </motion.a>
+            </motion.div>
+
+            {/* Quick Skills */}
+            <motion.div 
+              className="flex flex-wrap gap-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8, duration: 0.8 }}
+            >
+              {portfolioData.skills.verification.slice(0, 6).map((skill, index) => (
+                <motion.span 
+                  key={skill}
+                  className="glass-panel-subtle px-3 py-1 text-sm text-on-glass font-mono"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.9 + index * 0.1 }}
+                >
+                  {skill}
+                </motion.span>
+              ))}
+            </motion.div>
+          </motion.div>
+
+          {/* Right - Enhanced 3D Scene and Stats */}
+          <motion.div 
+            className="relative h-[600px] space-y-6"
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.8, duration: 1 }}
+          >
+            <div className="h-[400px]">
+              <ThreeDPlaceholder />
+            </div>
+            <StatsPanel />
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Enhanced scroll indicator */}
+      <motion.div 
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
+      >
+        <div className="flex flex-col items-center gap-2 text-secondary">
+          <span className="text-sm bg-[var(--glass-bg-strong)] backdrop-blur-md px-3 py-1 rounded border border-[var(--glass-border)] text-on-glass">
+            Scroll to explore
+          </span>
+          <motion.div 
+            className="w-6 h-10 border-2 border-[var(--color-secondary)] rounded-full flex justify-center"
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <motion.div 
+              className="w-1 h-3 bg-[var(--color-highlight)] rounded-full mt-2"
+              animate={{ height: [8, 16, 8] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </motion.div>
+        </div>
+      </motion.div>
+    </section>
+  );
+};
+
+export default Hero;

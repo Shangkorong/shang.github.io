@@ -706,17 +706,21 @@ const Hero = () => {
   // 🎮 3D Scene with Physics-Enhanced Cubes
   const ThreeDPlaceholder = ({ onMouseMove, onMouseLeave, colorMethod }) => {
     const [hoveredDie, setHoveredDie] = useState(null);
+    const [resetKey, setResetKey] = useState(0); // Add this line
+    const cubeRefsArray = useRef([]);
 
     // Check for reduced motion preference
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const resetView = () => {
-      setHoveredDie(null);
-      // Reset will be handled by the physics simulation
-    };
+        setHoveredDie(null);
+        setResetKey(prev => prev + 1); // This will force cubes to remount with fresh state
+        console.log('View reset - cubes will remount with starting positions');
+      };
+
 
     // 🚀 PHYSICS-ENHANCED BOUNCING DIE WITH CLICK-TO-LAUNCH (Solution A)
     // ==================================================================
-    const BouncingDie = ({ protocol, startPosition, colorMethod = 'all' }) => {
+    const BouncingDie = ({ protocol, startPosition, colorMethod, onRefReady, cubeIndex }) => {
       const meshRef = useRef();
       const positionRef = useRef(startPosition);
       const rotationRef = useRef([0, 0, 0]);
@@ -1289,15 +1293,36 @@ const Hero = () => {
           </mesh>
         </group>
       );
+      // Expose refs to parent component
+      useEffect(() => {
+        if (onRefReady) {
+          onRefReady(cubeIndex, {
+            meshRef,
+            positionRef,
+            velocityRef,
+            rotationRef
+          });
+        }
+      }, [onRefReady, cubeIndex]);
     };
 
     return (
       <div
-        className="relative w-full h-full bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-accent)] to-[var(--color-dark)] rounded-lg overflow-hidden"
+        className="relative w-full h-full bg-gradient-to-br from-[var(--color-primary)] via-[var(--color-accent)] to-[var(--color-dark)] rounded-lg overflow-hidden touch-none"
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
+        onTouchStart={(e) => {
+          // Prevent page scrolling when touching the 3D scene
+          e.preventDefault();
+        }}
+        onTouchMove={(e) => {
+          // Prevent page scrolling when dragging in the 3D scene
+          e.preventDefault();
+        }}
+        style={{ touchAction: 'none' }}
       >
         <Canvas
+          key={resetKey}  // Add this line - forces remount on reset
           camera={{ position: [0, 0, 5], fov: 50 }}
           style={{ width: '100%', height: '100%' }}
           onCreated={({ gl }) => {
@@ -1354,24 +1379,34 @@ const Hero = () => {
               key={protocol.name}
               protocol={protocol}
               colorMethod={colorMethod}
+              cubeIndex={index}
+              onRefReady={(idx, refs) => {
+                cubeRefsArray.current[idx] = refs;
+              }}
               startPosition={[
-                (index - 1) * 1.5, // Spread them out horizontally
-                Math.random() * 2 - 1, // Random Y position
-                Math.random() * 1 - 0.5 // Random Z position
+                (index - 1) * 1.5,
+                Math.random() * 2 - 1,
+                Math.random() * 1 - 0.5
               ]}
             />
           ))}
         </Canvas>
 
         {/* Control instructions and reset button */}
-        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
-          <div className="text-white/90 text-xs bg-[var(--glass-bg-strong)] backdrop-blur-md px-2 py-1 rounded border border-[var(--glass-border)]">
-            <div>🎮 Click: Launch • Hover: Control • Physics: Bounce & Gravity ⚡</div>
-            <div className="text-[var(--color-highlight)]">Enhanced physics-enabled 3D protocol dice with click-to-launch 🚀⬡✨</div>
+        <div className="absolute bottom-2 left-2 right-2 md:bottom-4 md:left-4 md:right-4 flex justify-between items-center gap-4">
+          {/* Instructions - Bottom Left */}
+          <div className="text-white/90 text-xs bg-[var(--glass-bg-strong)] backdrop-blur-md px-3 py-2 rounded border border-[var(--glass-border)] flex-1 max-w-md">
+            <div className="hidden md:block">
+              🎮 Click: Launch • Hover: Control • Physics: Bounce & Gravity ⚡
+              <div className="text-[var(--color-highlight)] text-[10px] mt-1">Enhanced physics-enabled 3D protocol dice with click-to-launch 🚀⬡✨</div>
+            </div>
+            <div className="md:hidden">Tap cubes to launch 🚀</div>
           </div>
+          
+          {/* Reset Button - Bottom Right */}
           <motion.button
             onClick={resetView}
-            className="glass-button text-xs px-3 py-1 min-h-8 text-on-glass"
+            className="glass-button text-xs px-3 py-1.5 text-on-glass whitespace-nowrap"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             aria-label="Reset 3D view to default position"
@@ -1381,11 +1416,11 @@ const Hero = () => {
         </div>
 
         {/* Status indicator */}
-        <div className="absolute top-4 right-4 text-white bg-[var(--glass-bg-strong)] backdrop-blur-md px-3 py-1 rounded border border-[var(--glass-border)]">
-          <span className="text-sm font-mono">
-            {hoveredDie ? `${hoveredDie} Following Mouse` : '🚀 Physics + Click-to-Launch Active'}
+        <div className="absolute top-2 right-2 md:top-4 md:right-4 text-white bg-[var(--glass-bg-strong)] backdrop-blur-md px-2 md:px-3 py-1 rounded border border-[var(--glass-border)]">
+          <span className="text-xs md:text-sm font-mono">
+            {hoveredDie ? `${hoveredDie} Active` : '🚀 Physics Active'}
           </span>
-          <div className="text-xs opacity-75 mt-1">
+          <div className="text-xs opacity-75 mt-1 hidden md:block">
             {hoveredDie ? 'Trails, ripples & particles enabled' : 'Quick click cubes to launch them!'}
           </div>
         </div>
@@ -1412,7 +1447,7 @@ const Hero = () => {
       />
 
       <div className="container relative z-10 min-h-screen flex items-center">
-        <div className="grid lg:grid-cols-2 gap-12 w-full items-center">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 w-full items-center">
           {/* Left Content (EXISTING - UNCHANGED) */}
           <motion.div
             className="space-y-8"
@@ -1424,11 +1459,30 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <AnimatedText 
-                text={portfolioData.personal.name}
-                className="heading-display text-primary mb-4"
-                delay={0.2}
-              />
+              {/* Mobile-responsive name display */}
+              <div className="heading-display text-primary mb-4">
+                {/* Desktop: Full name on one line */}
+                <div className="hidden sm:block">
+                  <AnimatedText 
+                    text={portfolioData.personal.name}
+                    className="heading-display text-primary"
+                    delay={0.2}
+                  />
+                </div>
+                {/* Mobile: Split into two lines */}
+                <div className="block sm:hidden">
+                  <AnimatedText 
+                    text="SHANGKORONG"
+                    className="heading-display text-primary block"
+                    delay={0.2}
+                  />
+                  <AnimatedText 
+                    text="KHALING"
+                    className="heading-display text-primary block"
+                    delay={0.8}
+                  />
+                </div>
+              </div>
               {/* Title Animation with Blur Effect */}
               <AnimatedTextWithBlur 
                 text={portfolioData.personal.title}
@@ -1475,7 +1529,7 @@ const Hero = () => {
                 View Case Studies
               </motion.button>
               <motion.a
-                href="/resume.pdf"
+                href="/assets/documents/Shangkorong_Khaling_Resume.pdf"
                 download
                 className="glass-button highlight"
                 whileHover={{ scale: 1.05 }}
@@ -1516,12 +1570,12 @@ const Hero = () => {
 
           {/* Right - Enhanced 3D Scene and Stats */}
           <motion.div
-            className="relative h-[600px] space-y-6"
+            className="relative h-[400px] md:h-[500px] lg:h-[600px] space-y-4 lg:space-y-6"
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.8, duration: 1 }}
           >
-            <div className="h-[400px] relative">
+            <div className="h-[300px] md:h-[350px] lg:h-[400px] relative">
               <ThreeDPlaceholder
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
@@ -1529,11 +1583,11 @@ const Hero = () => {
               />
 
               {/* 🎛️ Enhanced Color Method Control Panel with Outside Click Detection */}
-              <div className="absolute top-4 left-4 z-10" ref={colorPanelRef}>
+              <div className="absolute top-2 left-2 md:top-4 md:left-4 z-10" ref={colorPanelRef}>
                 {/* Dropdown Header - Always Visible */}
                 <motion.button
                   onClick={() => setIsColorPanelOpen(!isColorPanelOpen)}
-                  className="flex items-center justify-between w-full min-w-[200px] text-white bg-[var(--glass-bg-strong)] backdrop-blur-md px-3 py-2 rounded border border-[var(--glass-border)] hover:bg-[var(--glass-bg-strong)]/80 transition-all duration-200"
+                  className="flex items-center justify-between w-full min-w-[120px] md:min-w-[200px] text-white bg-[var(--glass-bg-strong)] backdrop-blur-md px-2 md:px-3 py-1 md:py-2 rounded border border-[var(--glass-border)] hover:bg-[var(--glass-bg-strong)]/80 transition-all duration-200"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

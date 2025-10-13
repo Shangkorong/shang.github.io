@@ -118,8 +118,17 @@ const LiveMetrics = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={springConfig}
-            className="absolute top-full left-0 right-0 mt-2 glass-panel p-4 z-20 pointer-events-auto"
+            className="fixed md:absolute glass-panel p-4 z-[9999] pointer-events-auto max-h-[60vh] overflow-y-auto"
             style={{
+              top: containerRef.current 
+                ? `${containerRef.current.getBoundingClientRect().bottom + 8}px` 
+                : 'auto',
+              left: containerRef.current
+                ? `${containerRef.current.getBoundingClientRect().left}px`
+                : 'auto',
+              width: containerRef.current
+                ? `${containerRef.current.offsetWidth}px` 
+                : 'auto',
               pointerEvents: isVisible ? 'auto' : 'none'
             }}
           >

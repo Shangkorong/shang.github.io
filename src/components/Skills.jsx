@@ -4,6 +4,46 @@ import { portfolioData } from '../data/mock';
 import EnhancedCard from './EnhancedCard';
 import MiniChip3D from './MiniChip3D';
 
+const SkillButton = ({ skill, category, delay = 0 }) => {
+  const handleRipple = (e) => {
+    const button = e.currentTarget;
+    const rect = button.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    
+    const ripple = document.createElement('span');
+    ripple.classList.add('skill-button-ripple');
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    
+    button.appendChild(ripple);
+    
+    setTimeout(() => {
+      ripple.remove();
+    }, 600);
+  };
+
+  return (
+    <motion.button
+      className={`skill-button ${category.toLowerCase().replace(/\s+/g, '-').replace(/&/g, '')}`}
+      onClick={handleRipple}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{
+        duration: 0.5,
+        delay: delay,
+        ease: [0.25, 0.46, 0.45, 0.94]
+      }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      {skill}
+    </motion.button>
+  );
+};
+
 const Skills = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, threshold: 0.1 });
@@ -82,20 +122,15 @@ const Skills = () => {
                   <h3 className="heading-sm text-on-glass">{category.title}</h3>
                 </div>
                 
-                <div className="space-y-2">
+                {/* Enhanced Glassmorphism Skill Buttons */}
+                <div className="skill-buttons-grid flex flex-wrap gap-1">
                   {category.skills.map((skill, skillIndex) => (
-                    <motion.div
+                    <SkillButton
                       key={skill}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={isInView ? { opacity: 1, x: 0 } : {}}
-                      transition={{ 
-                        duration: 0.5, 
-                        delay: categoryIndex * 0.2 + skillIndex * 0.1 
-                      }}
-                      className="glass-panel-subtle px-3 py-2 text-sm text-glass-secondary font-mono hover:text-on-glass hover:border-[var(--color-highlight)] transition-all duration-200"
-                    >
-                      {skill}
-                    </motion.div>
+                      skill={skill}
+                      category={category.title}
+                      delay={categoryIndex * 0.2 + skillIndex * 0.05}
+                    />
                   ))}
                 </div>
               </EnhancedCard>
@@ -114,15 +149,35 @@ const Skills = () => {
           <div className="glass-panel p-8">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {portfolioData.training.map((training, index) => (
-                <motion.div
+                <motion.button
                   key={training}
+                  className="training-button skill-button tools"
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={isInView ? { opacity: 1, scale: 1 } : {}}
                   transition={{ duration: 0.5, delay: 1 + index * 0.1 }}
-                  className="glass-panel-subtle p-3 text-center text-sm text-glass-secondary hover:text-on-glass transition-all duration-200"
+                  onClick={(e) => {
+                    // Add ripple effect to training buttons too
+                    const button = e.currentTarget;
+                    const rect = button.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+                    
+                    const ripple = document.createElement('span');
+                    ripple.classList.add('skill-button-ripple');
+                    ripple.style.width = ripple.style.height = size + 'px';
+                    ripple.style.left = x + 'px';
+                    ripple.style.top = y + 'px';
+                    
+                    button.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                      ripple.remove();
+                    }, 600);
+                  }}
                 >
                   {training}
-                </motion.div>
+                </motion.button>
               ))}
             </div>
           </div>

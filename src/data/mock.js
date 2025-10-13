@@ -223,10 +223,10 @@ export const portfolioData = {
 
   // Navigation structure
   navigation: [
-    { name: "About", href: "#about" },
+    { name: "About", href: "#hero" },
     { name: "Skills", href: "#skills" },
     { name: "Projects", href: "#projects" },
-    { name: "Case Studies", href: "#case-studies" },
+    { name: "Case Studies", href: "#projects" },
     { name: "Research", href: "#research" },
     { name: "Awards", href: "#awards" },
     { name: "Contact", href: "#contact" }

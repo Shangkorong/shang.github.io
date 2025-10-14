@@ -714,7 +714,7 @@ const Hero = () => {
     const resetView = () => {
         setHoveredDie(null);
         setResetKey(prev => prev + 1); // This will force cubes to remount with fresh state
-        console.log('View reset - cubes will remount with starting positions');
+        //console.log('View reset - cubes will remount with starting positions');
       };
 
 
@@ -883,7 +883,7 @@ const Hero = () => {
         // Record click start time for quick click detection
         clickStartTime.current = Date.now();
 
-        console.log(`🎯 ${protocol.name} click started - detecting intent...`);
+        //console.log(`🎯 ${protocol.name} click started - detecting intent...`);
       };
 
       // 🚀 ENHANCED: Smart click to launch (Solution A)
@@ -903,7 +903,7 @@ const Hero = () => {
             velocityRef.current[1] += Math.random() * 4 + 3; // Strong upward force (3-7 units)
             velocityRef.current[2] += (Math.random() - 0.5) * 6; // Random depth force
 
-            console.log(`🚀 ${protocol.name} CLICK LAUNCHED! Random impulse applied.`);
+            //console.log(`🚀 ${protocol.name} CLICK LAUNCHED! Random impulse applied.`);
 
             // 🕐 TEMPORARY HOVER CONTROL DISABLE (Solution A Core Feature)
             // =============================================================
@@ -920,10 +920,10 @@ const Hero = () => {
             const cooldownTime = 1500;
             launchCooldownTimer.current = setTimeout(() => {
               isLaunchCooldown.current = false;
-              console.log(`✅ ${protocol.name} hover control re-enabled! (${cooldownTime}ms cooldown completed)`);
+              //console.log(`✅ ${protocol.name} hover control re-enabled! (${cooldownTime}ms cooldown completed)`);
             }, cooldownTime);
 
-            console.log(`🕐 ${protocol.name} hover disabled for ${cooldownTime}ms to allow physics...`);
+            //console.log(`🕐 ${protocol.name} hover disabled for ${cooldownTime}ms to allow physics...`);
           }
         }
 
@@ -937,9 +937,9 @@ const Hero = () => {
         if (!isLaunchCooldown.current) {
           setIsHovered(true);
           hoverDuration.current = 0; // Reset hover duration
-          console.log(`🖱️ ${protocol.name} hover started (cooldown: ${isLaunchCooldown.current})`);
+          //console.log(`🖱️ ${protocol.name} hover started (cooldown: ${isLaunchCooldown.current})`);
         } else {
-          console.log(`⏳ ${protocol.name} hover blocked - in launch cooldown`);
+          //console.log(`⏳ ${protocol.name} hover blocked - in launch cooldown`);
         }
       };
 
@@ -1100,13 +1100,13 @@ const Hero = () => {
 
           // Add slight random vertical bounce for variety
           velocity[1] += Math.random() * 0.5;
-          console.log(`🟦 ${protocol.name} bounced off left wall!`);
+          //console.log(`🟦 ${protocol.name} bounced off left wall!`);
         } else if (position[0] + cubeHalf >= bounds.max.x) {
           position[0] = bounds.max.x - cubeHalf;
           velocity[0] = -Math.abs(velocity[0]) * BOUNCE_DAMPING; // Bounce left
 
           velocity[1] += Math.random() * 0.5;
-          console.log(`🟦 ${protocol.name} bounced off right wall!`);
+          //console.log(`🟦 ${protocol.name} bounced off right wall!`);
         }
 
         // ⬆️⬇️ Y-axis boundaries (floor/ceiling)
@@ -1117,11 +1117,11 @@ const Hero = () => {
           // Add random horizontal scatter on floor bounce
           velocity[0] += (Math.random() - 0.5) * 0.8;
           velocity[2] += (Math.random() - 0.5) * 0.8;
-          console.log(`🟦 ${protocol.name} bounced off floor!`);
+          //console.log(`🟦 ${protocol.name} bounced off floor!`);
         } else if (position[1] + cubeHalf >= bounds.max.y) {
           position[1] = bounds.max.y - cubeHalf;
           velocity[1] = -Math.abs(velocity[1]) * BOUNCE_DAMPING; // Bounce down
-          console.log(`🟦 ${protocol.name} bounced off ceiling!`);
+          //console.log(`🟦 ${protocol.name} bounced off ceiling!`);
         }
 
         // ↗️↙️ Z-axis boundaries (front/back walls)
@@ -1333,12 +1333,12 @@ const Hero = () => {
 
               // Disable mouse tracking temporarily to prevent further issues
               setTimeout(() => {
-                console.log('Re-enabling mouse tracking after context recovery');
+                //console.log('Re-enabling mouse tracking after context recovery');
               }, 1000);
             };
 
             const handleContextRestored = () => {
-              console.log('WebGL context restored successfully');
+              //console.log('WebGL context restored successfully');
               try {
                 gl.forceContextRestore();
               } catch (e) {
@@ -1440,10 +1440,15 @@ const Hero = () => {
 
   return (
     <section ref={ref} className="min-h-screen relative overflow-hidden pt-20" id="hero">
-      {/* Background with parallax */}
+      {/* Animated Background - Behind everything */}
+
+      {/* Background with parallax - REDUCED OPACITY */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-[var(--color-dark)] via-[var(--color-primary)] to-[var(--color-accent)] opacity-90"
-        style={{ y }}
+        className="absolute inset-0 bg-gradient-to-br from-[var(--color-dark)] via-[var(--color-primary)] to-[var(--color-accent)]"
+        style={{ 
+          y,
+          opacity: 0.3 // Changed from 0.9 to 0.6 to let background show through
+        }}
       />
 
       <div className="container relative z-10 min-h-screen flex items-center">
@@ -1459,30 +1464,50 @@ const Hero = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              {/* Mobile-responsive name display */}
+              {/* Mobile-responsive name display with controlled breaking */}
               <div className="heading-display text-primary mb-4">
-                {/* Desktop: Full name on one line */}
+                {/* Desktop: Controlled line break with responsive font sizing */}
                 <div className="hidden sm:block">
-                  <AnimatedText 
-                    text={portfolioData.personal.name}
-                    className="heading-display text-primary"
-                    delay={0.2}
-                  />
+                  <h1 
+                    className="font-bold leading-tight"
+                    style={{
+                      fontSize: 'clamp(2rem, 5vw + 0.5rem, 5rem)',
+                      letterSpacing: '0.02em'
+                    }}
+                  >
+                    <span className="whitespace-nowrap inline-block">
+                      <AnimatedText
+                        text="SHANGKORONG"
+                        className="text-white inline-block"
+                        delay={0.2}
+                      />
+                    </span>
+                    {' '}
+                    <span className="whitespace-nowrap inline-block">
+                      <AnimatedText
+                        text="KHALING"
+                        className="text-white inline-block"
+                        delay={0.5}
+                      />
+                    </span>
+                  </h1>
                 </div>
-                {/* Mobile: Split into two lines */}
+                
+                {/* Mobile: Split into two lines (unchanged) */}
                 <div className="block sm:hidden">
-                  <AnimatedText 
+                  <AnimatedText
                     text="SHANGKORONG"
                     className="heading-display text-primary block"
                     delay={0.2}
                   />
-                  <AnimatedText 
+                  <AnimatedText
                     text="KHALING"
                     className="heading-display text-primary block"
                     delay={0.8}
                   />
                 </div>
               </div>
+
               {/* Title Animation with Blur Effect */}
               <AnimatedTextWithBlur 
                 text={portfolioData.personal.title}

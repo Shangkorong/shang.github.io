@@ -753,3 +753,196 @@ body.scroll-locked {
   background: rgba(0, 0, 0, 0.6) !important;
   pointer-events: auto !important;
 }
+
+/* ========================================
+   ANIMATED BACKGROUND - SIMPLE & SAFE
+   ======================================== */
+
+.animated-bg-container {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gradient-mesh-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.glass-orb {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(0, 255, 255, 0.15),
+    rgba(0, 255, 255, 0.05) 40%,
+    transparent 70%
+  );
+  filter: blur(60px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.orb-1 {
+  top: 10%;
+  left: 15%;
+}
+
+.orb-2 {
+  top: 50%;
+  right: 20%;
+}
+
+.orb-3 {
+  bottom: 15%;
+  left: 50%;
+}
+
+/* ========================================
+   SECTION BACKGROUNDS - SEMI-TRANSPARENT
+   ======================================== */
+
+/* SECTION BACKGROUNDS - SEMI-TRANSPARENT */
+/* Make all sections semi-transparent so animated background shows through */
+section {
+  background: rgba(15, 14, 71, 0.7) !important;
+  position: relative;
+  /* REMOVED z-index: 2 - was causing dropdown to appear behind other sections */
+}
+
+/* Hero section - keep it more transparent */
+hero, section:first-of-type {
+  background: rgba(15, 14, 71, 0.3) !important;
+  isolation: isolate;
+}
+
+/* Specific sections that might have solid backgrounds */
+.section, [class*="section-"] {
+  background: rgba(15, 14, 71, 0.7) !important;
+}
+
+/* Skills section */
+#skills {
+  background: rgba(15, 14, 71, 0.1) !important;
+}
+
+/* Projects section */
+#projects {
+  background: rgba(15, 14, 71, 0.5) !important;
+}
+
+/* Research section */
+#research {
+  background: rgba(15, 14, 71, 0.5) !important;
+}
+
+/* Awards section */
+#awards {
+  background: rgba(15, 14, 71, 0.5) !important;
+}
+
+/* Contact section */
+#contact {
+  background: rgba(15, 14, 71, 0.5) !important;
+}
+
+/* Footer */
+footer {
+  background: rgba(15, 14, 71, 0.8) !important;
+}
+
+/* Ensure text remains readable - NO Z-INDEX */
+section {
+  position: relative;
+}
+
+/* PREMIUM LIQUID GLASS DROPDOWN - Enhanced Glassmorphism */
+.glass-panel-dropdown {
+  /* Frosted glass base with perfect blur */
+  background: linear-gradient(
+    135deg,
+    rgba(39, 39, 87, 0.85) 0%,
+    rgba(80, 80, 129, 0.8) 50%,
+    rgba(134, 134, 172, 0.75) 100%
+  ) !important;
+  
+  /* Premium backdrop blur with saturation boost */
+  backdrop-filter: blur(24px) saturate(200%) brightness(110%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) brightness(110%) !important;
+  
+  /* Liquid glass border with gradient shimmer */
+  border: 1px solid rgba(134, 134, 172, 0.5) !important;
+  border-radius: 16px !important;
+  
+  /* Multi-layer shadow for depth */
+  box-shadow: 
+    0 8px 32px rgba(15, 14, 71, 0.8),
+    0 2px 8px rgba(0, 255, 209, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1) !important;
+  
+  /* Performance optimization */
+  isolation: isolate !important;
+  will-change: transform, opacity !important;
+  
+  /* CRITICAL: Force positioning to escape stacking contexts */
+  position: fixed !important;
+  z-index: 999999 !important;
+}
+
+/* Rest of the pseudo-elements remain the same... */
+
+
+/* Liquid glass reflection effect - Top highlight */
+.glass-panel-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    transparent 100%
+  );
+  border-radius: 16px 16px 0 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Glass edge refraction effect - Bottom highlight */
+.glass-panel-dropdown::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(0, 255, 209, 0.3) 50%,
+    transparent 100%
+  );
+  border-radius: 0 0 16px 16px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ensure content stays above pseudo-elements */
+.glass-panel-dropdown > * {
+  position: relative;
+  z-index: 2;
+}
+
+
+
+

@@ -2,22 +2,24 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const AnimatedBackground = () => {
-  // Generate 100 shooting star particles with REVERSED trajectory
-  const particles = Array.from({ length: 100 }, (_, i) => {
-    const startX = Math.random() * 1600 - 800; // Start far away
+  // Smart particle count based on device
+  const isMobile = window.innerWidth <= 768;
+  const particleCount = isMobile ? 30 : 80; // Mobile: 30, Desktop: 80
+  
+  const particles = Array.from({ length: particleCount }, (_, i) => {
+    const startX = Math.random() * 1600 - 800;
     const startY = Math.random() * 1600 - 800;
-    const endX = Math.random() * 400 - 200; // End close
+    const endX = Math.random() * 400 - 200;
     const endY = Math.random() * 400 - 200;
 
     return {
       id: i,
       left: `${Math.random() * 100}%`,
       top: `${Math.random() * 100}%`,
-      size: Math.random() * 3 + 2,
-      duration: Math.random() * 1.5 + 0.8,
+      size: isMobile ? Math.random() * 2 + 1 : Math.random() * 3 + 2, // Smaller on mobile
+      duration: isMobile ? Math.random() * 1.2 + 0.6 : Math.random() * 1.5 + 0.8,
       delay: Math.random() * 10,
-      opacity: Math.random() * 0.8 + 0.4,
-      // REVERSED: Start far, end near so particle moves AWAY from tail
+      opacity: isMobile ? Math.random() * 0.6 + 0.4 : Math.random() * 0.8 + 0.4,
       startX: startX,
       startY: startY,
       endX: endX,

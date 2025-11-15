@@ -8,13 +8,13 @@ import Research from './components/Research';
 import Awards from './components/Awards';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
-//import AnimatedBackground from './components/AnimatedBackground';
+import AnimatedBackground from './components/AnimatedBackground';
 
 function App() {
   return (
     <div className="App relative">  {/* ← ADDED 'relative' HERE */}
       {/* <AnimatedBackground /> */}  {/* ← COMMENTED OUT FOR TESTING */}
-      {/* <AnimatedBackground /> */}
+      <AnimatedBackground />
       <Header />
       <main>
         <Hero />
